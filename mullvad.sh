@@ -5,19 +5,22 @@
 # complicate IP routing table entries which may require manual intervention to fix thereafter.
 set -e
 
-checkMullvadConnectivity() {
-	# Check if Mullvad VPN is already connected.
-	connectedWireguardConfiguration=$(ip addr | grep --word-regexp "$1" | cut -d " " -f 2 | tr -d ":")
-	return 0
-}
-
 # Declare global variables here
 # Modify the variables in this section in conformity with the naming convention of your Mullvad
 # configuration files in /etc/wireguard
 mullvadVpnInterfaceRegex="mullvad-\w*"
 wireguardConfigurationDirectory="/etc/wireguard/"
+connectedWireguardConfiguration=""
 
-checkMullvadConnectivity $mullvadVpnInterfaceRegex
+# A method to retrieve the current connected Mullvad interface.
+checkMullvadConnectivity() {
+	# Check if Mullvad VPN is already connected.
+	connectedWireguardConfiguration=$(ip addr | grep --word-regexp "$1" | cut -d " " -f 2 | tr -d ":")
+	# Return an arbitrary integer value | This value is not checked right now
+	return 0
+}
+
+checkMullvadConnectivity "$mullvadVpnInterfaceRegex"
 
 # Debug log
 # echo " ip addr command returned $connectedWireguardConfiguration"
@@ -28,7 +31,8 @@ newWireguardConfigurationList=$(sudo ls $wireguardConfigurationDirectory | grep 
 # Pick a wireguard interface at random to connect to next
 newWireguardConfiguration=$(shuf -n 1 -e $newWireguardConfigurationList)
 
-if [[ -n "$connectedWireguardConfiguration" ]]; then # Satisfies this condition if a connected interface was found.
+# Satisfies this condition if a connected interface was found.
+if [[ -n "$connectedWireguardConfiguration" ]]; then
 	
 	echo "" # Blank space for formatting
 	echo "Cron is re-configuring the connected VPN."
@@ -40,7 +44,8 @@ if [[ -n "$connectedWireguardConfiguration" ]]; then # Satisfies this condition 
 	checkMullvadConnectivity $mullvadVpnInterfaceRegex
 	echo $connectedWireguardConfiguration
 
-elif [[ -z "$connectedWireguardConfiguration" ]]; then # Satisfies this condition if a connected interface was not found.
+# Satisfies this condition if a connected interface was not found.
+elif [[ -z "$connectedWireguardConfiguration" ]]; then
 	
 	echo "" # Blank space for formatting
 	echo "Cron is configuring the connected VPN."
