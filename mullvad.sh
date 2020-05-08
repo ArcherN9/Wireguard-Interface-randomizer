@@ -48,7 +48,7 @@ if [[ -n "$connectedWireguardConfiguration" ]]; then
 elif [[ -z "$connectedWireguardConfiguration" ]]; then
 	
 	echo "" # Blank space for formatting
-	echo "Cron is configuring the connected VPN."
+	echo "Cron is configuring a VPN now."
 	echo "System will attempt to connect to $newWireguardConfiguration"
 
 	sudo wg-quick up $wireguardConfigurationDirectory$newWireguardConfiguration 2> /dev/null
