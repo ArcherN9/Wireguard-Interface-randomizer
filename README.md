@@ -8,7 +8,6 @@ Though primarily written for Mullvad, should work with almost all wireguard inte
 ## The Script
 Mullvad wireguard configuration script saves the different Wireguard interfaces in `/etc/wireguard` with the nomenclature `mullvad-<server-name>.conf`.
 
-The script picks the scripts that start with `mullvad-` and picks a random one to connect to.
-
+The script picks the scripts that start with `mullvad-` and picks a random one to connect to. A complete guide on how to use it [located on my Blog](https://archern9.github.io/articles/2020/06/29/randomize-mullvad-interface-with-cron.html)
 
 ### MIT License
