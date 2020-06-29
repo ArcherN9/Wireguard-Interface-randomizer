@@ -41,9 +41,6 @@ if [[ -n "$connectedWireguardConfiguration" ]]; then
 	sudo wg-quick down $connectedWireguardConfiguration 2> /dev/null
 	sudo wg-quick up $wireguardConfigurationDirectory$newWireguardConfiguration 2> /dev/null
 
-	checkMullvadConnectivity $mullvadVpnInterfaceRegex
-	echo $connectedWireguardConfiguration
-
 # Satisfies this condition if a connected interface was not found.
 elif [[ -z "$connectedWireguardConfiguration" ]]; then
 	
@@ -52,7 +49,4 @@ elif [[ -z "$connectedWireguardConfiguration" ]]; then
 	echo "System will attempt to connect to $newWireguardConfiguration"
 
 	sudo wg-quick up $wireguardConfigurationDirectory$newWireguardConfiguration 2> /dev/null
-
-	checkMullvadConnectivity $mullvadVpnInterfaceRegex
-	echo $connectedWireguardConfiguration
 fi
