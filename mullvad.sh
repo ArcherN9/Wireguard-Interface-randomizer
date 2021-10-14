@@ -9,7 +9,6 @@ set -e
 # Modify the variables in this section in conformity with the naming convention of your Mullvad
 # configuration files in /etc/wireguard
 mullvadVpnInterfaceRegex="mullvad-\w*"
-
 wireguardConfigurationDirectory="/etc/wireguard/"
 connectedWireguardConfiguration=""
 
@@ -20,6 +19,23 @@ checkMullvadConnectivity() {
 	# Return an arbitrary integer value | This value is not checked right now
 	return 0
 }
+
+case $1 in
+	stop)
+		STOP="true"
+	;;
+	#start)
+	#	STOP="false"
+	#;;
+	#restart)
+	#	STOP="false"
+	#;;
+
+	*)
+	:;
+	;;
+esac
+
 
 checkMullvadConnectivity "$mullvadVpnInterfaceRegex"
 
@@ -36,25 +52,40 @@ elif [[ -z "$connectedWireguardConfiguration" ]]; then
 fi
 
 
-# Pick a wireguard interface at random to connect to next
-newWireguardConfiguration=$(shuf -n 1 -e $newWireguardConfigurationList)
+if [ "$STOP" == "true" ];then
+    if [[ -n "$connectedWireguardConfiguration" ]]; then
+		
+		echo "" # Blank space for formatting
+		echo "Disconnecting currently connected to $connectedWireguardConfiguration"
+		sudo wg-quick down $connectedWireguardConfiguration # 2> /dev/null
 
-# Satisfies this condition if a connected interface was found.
-if [[ -n "$connectedWireguardConfiguration" ]]; then
-	
-	echo "" # Blank space for formatting
-	echo "Cron is re-configuring the connected VPN."
-	echo "System is currently connected to $connectedWireguardConfiguration and switching over to $newWireguardConfiguration"
+	# Satisfies this condition if a connected interface was not found.
+	elif [[ -z "$connectedWireguardConfiguration" ]]; then
+		
+		echo "" # Blank space for formatting
+		echo "Not currently connected to any VPN."
+	fi
+else
+	# Pick a wireguard interface at random to connect to next
+	newWireguardConfiguration=$(shuf -n 1 -e $newWireguardConfigurationList)
 
-	sudo wg-quick down $connectedWireguardConfiguration # 2> /dev/null
-	sudo wg-quick up $wireguardConfigurationDirectory$newWireguardConfiguration # 2> /dev/null
+	# Satisfies this condition if a connected interface was found.
+	if [[ -n "$connectedWireguardConfiguration" ]]; then
+		
+		echo "" # Blank space for formatting
+		echo "Cron is re-configuring the connected VPN."
+		echo "System is currently connected to $connectedWireguardConfiguration and switching over to $newWireguardConfiguration"
 
-# Satisfies this condition if a connected interface was not found.
-elif [[ -z "$connectedWireguardConfiguration" ]]; then
-	
-	echo "" # Blank space for formatting
-	echo "Cron is configuring a VPN now."
-	echo "System will attempt to connect to $newWireguardConfiguration"
+		sudo wg-quick down $connectedWireguardConfiguration # 2> /dev/null
+		sudo wg-quick up $wireguardConfigurationDirectory$newWireguardConfiguration # 2> /dev/null
 
-	sudo wg-quick up $wireguardConfigurationDirectory$newWireguardConfiguration # 2> /dev/null
+	# Satisfies this condition if a connected interface was not found.
+	elif [[ -z "$connectedWireguardConfiguration" ]]; then
+		
+		echo "" # Blank space for formatting
+		echo "Cron is configuring a VPN now."
+		echo "System will attempt to connect to $newWireguardConfiguration"
+
+		sudo wg-quick up $wireguardConfigurationDirectory$newWireguardConfiguration # 2> /dev/null
+	fi
 fi
