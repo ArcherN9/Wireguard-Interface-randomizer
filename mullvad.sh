@@ -24,14 +24,19 @@ case $1 in
 	stop)
 		STOP="true"
 	;;
-	#start)
-	#	STOP="false"
-	#;;
-	#restart)
-	#	STOP="false"
-	#;;
-
-	*)
+	status)
+		curl https://am.i.mullvad.net/connected
+		exit
+	;;
+	start)
+		STOP="false"
+	;;
+	restart)
+		STOP="false"
+	;;
+	*) 
+		echo "Usage: $0 {start|stop|restart|status}"
+		exit
 	:;
 	;;
 esac
