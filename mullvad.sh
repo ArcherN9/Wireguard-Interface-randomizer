@@ -100,7 +100,8 @@ if [ "$STOP" == "true" ];then
 	# Satisfies this condition if a connected interface was not found.
 	elif [[ -z "$connectedWireguardConfiguration" ]]; then
 		echo "" # Blank space for formatting
-		echo "Not currently connected to any VPN."
+		curl https://am.i.mullvad.net/connected
+		#echo "Not currently connected to any VPN."
 	fi
 	curl https://am.i.mullvad.net/connected
 	exit
