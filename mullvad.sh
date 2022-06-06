@@ -69,7 +69,6 @@ case $1 in
 	*) 
 		echo "Usage: $0 {start|stop|restart|status}"
 		exit
-	:;
 	;;
 esac
 
@@ -86,7 +85,6 @@ if [ -z "$(sudo ls $wireguardConfigurationDirectory | grep --word-regexp "$mullv
 fi
 
 if [[ -n "$connectedWireguardConfiguration" ]]; then
-	ech "1"
 	newWireguardConfigurationList=$(sudo ls $wireguardConfigurationDirectory | grep -v "$connectedWireguardConfiguration" | grep --word-regexp "$mullvadVpnInterfaceRegex" | grep conf$)
 elif [[ -z "$connectedWireguardConfiguration" ]]; then
 	newWireguardConfigurationList=$(sudo ls $wireguardConfigurationDirectory | grep --word-regexp "$mullvadVpnInterfaceRegex" | grep conf$)
