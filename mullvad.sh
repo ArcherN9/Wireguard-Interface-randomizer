@@ -98,10 +98,12 @@ if [ "$STOP" == "true" ];then
 		sudo wg-quick down $connectedWireguardConfiguration # 2> /dev/null
 
 	# Satisfies this condition if a connected interface was not found.
+	#This is redundant because the output of the curl says "You are not connected to Mullvad"
 	#elif [[ -z "$connectedWireguardConfiguration" ]]; then
 		#echo "" # Blank space for formatting
 		#echo "Not currently connected to any VPN."
 	fi
+
 	curl https://am.i.mullvad.net/connected
 	exit
 else
@@ -112,7 +114,6 @@ else
 		# Satisfies this condition if a connected interface was found.
 		if [[ -n "$connectedWireguardConfiguration" ]]; then
 			#echo "" # Blank space for formatting
-			echo "Cron is re-configuring the connected VPN."
 			echo "System is currently connected to $connectedWireguardConfiguration and switching over to $newWireguardConfiguration"
 
 			sudo wg-quick down $connectedWireguardConfiguration # 2> /dev/null
@@ -121,7 +122,6 @@ else
 		# Satisfies this condition if a connected interface was not found.
 		elif [[ -z "$connectedWireguardConfiguration" ]]; then
 			#echo "" # Blank space for formatting
-			echo "Cron is configuring a VPN now."
 			echo "System will attempt to connect to $newWireguardConfiguration"
 
 			sudo wg-quick up $wireguardConfigurationDirectory$newWireguardConfiguration # 2> /dev/null
