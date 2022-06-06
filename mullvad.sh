@@ -93,14 +93,13 @@ fi
 
 if [ "$STOP" == "true" ];then
 	if [[ -n "$connectedWireguardConfiguration" ]]; then
-		echo "" # Blank space for formatting
+		#echo "" # Blank space for formatting
 		echo "Disconnecting currently connected to $connectedWireguardConfiguration"
 		sudo wg-quick down $connectedWireguardConfiguration # 2> /dev/null
 
 	# Satisfies this condition if a connected interface was not found.
-	elif [[ -z "$connectedWireguardConfiguration" ]]; then
-		echo "" # Blank space for formatting
-		curl https://am.i.mullvad.net/connected
+	#elif [[ -z "$connectedWireguardConfiguration" ]]; then
+		#echo "" # Blank space for formatting
 		#echo "Not currently connected to any VPN."
 	fi
 	curl https://am.i.mullvad.net/connected
@@ -112,7 +111,7 @@ else
 
 		# Satisfies this condition if a connected interface was found.
 		if [[ -n "$connectedWireguardConfiguration" ]]; then
-			echo "" # Blank space for formatting
+			#echo "" # Blank space for formatting
 			echo "Cron is re-configuring the connected VPN."
 			echo "System is currently connected to $connectedWireguardConfiguration and switching over to $newWireguardConfiguration"
 
@@ -121,7 +120,7 @@ else
 
 		# Satisfies this condition if a connected interface was not found.
 		elif [[ -z "$connectedWireguardConfiguration" ]]; then
-			echo "" # Blank space for formatting
+			#echo "" # Blank space for formatting
 			echo "Cron is configuring a VPN now."
 			echo "System will attempt to connect to $newWireguardConfiguration"
 
