@@ -25,7 +25,7 @@ case $1 in
 		STOP="true"
 	;;
 	status)
-		curl https://am.i.mullvad.net/connected
+		curl -sS https://am.i.mullvad.net/connected
 		exit
 	;;
 	checkIP)
@@ -93,18 +93,16 @@ fi
 
 if [ "$STOP" == "true" ];then
 	if [[ -n "$connectedWireguardConfiguration" ]]; then
-		#echo "" # Blank space for formatting
 		echo "Disconnecting currently connected to $connectedWireguardConfiguration"
 		sudo wg-quick down $connectedWireguardConfiguration # 2> /dev/null
 
 	# Satisfies this condition if a connected interface was not found.
 	#This is redundant because the output of the curl says "You are not connected to Mullvad"
 	#elif [[ -z "$connectedWireguardConfiguration" ]]; then
-		#echo "" # Blank space for formatting
 		#echo "Not currently connected to any VPN."
 	fi
 
-	curl https://am.i.mullvad.net/connected
+	curl -sS https://am.i.mullvad.net/connected
 	exit
 else
 	while : ; do
@@ -113,21 +111,17 @@ else
 
 		# Satisfies this condition if a connected interface was found.
 		if [[ -n "$connectedWireguardConfiguration" ]]; then
-			#echo "" # Blank space for formatting
 			echo "System is currently connected to $connectedWireguardConfiguration and switching over to $newWireguardConfiguration"
-
 			sudo wg-quick down $connectedWireguardConfiguration # 2> /dev/null
 			sudo wg-quick up $wireguardConfigurationDirectory$newWireguardConfiguration # 2> /dev/null
 
 		# Satisfies this condition if a connected interface was not found.
 		elif [[ -z "$connectedWireguardConfiguration" ]]; then
-			#echo "" # Blank space for formatting
 			echo "System will attempt to connect to $newWireguardConfiguration"
-
 			sudo wg-quick up $wireguardConfigurationDirectory$newWireguardConfiguration # 2> /dev/null
 		fi
 		sleep 2
-		IP=$(curl https://am.i.mullvad.net/connected)
+		IP=$(curl -sS https://am.i.mullvad.net/connected)
 		DELIMITER=':'
 		if [[ "$IP" == *"$DELIMITER"* ]]; then
 			echo "$IP"
@@ -146,7 +140,7 @@ else
 			#	newWireguardConfigurationList=$(sudo ls $wireguardConfigurationDirectory | grep --word-regexp "$mullvadVpnInterfaceRegex" | grep conf$)
 			#fi
 		else
-			curl https://am.i.mullvad.net/connected
+			curl -sS https://am.i.mullvad.net/connected
 			exit
 		fi
 		[[ "$IP" == *"$DELIMITER"* ]] || break
