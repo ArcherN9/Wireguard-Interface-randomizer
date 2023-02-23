@@ -22,7 +22,7 @@ checkMullvadConnectivity() {
 
 case $1 in
 	toggle)
-        connectedStatus=$(curl -sSk https://am.i.mullvad.net/connected)
+            connectedStatus=$(curl -sSk https://am.i.mullvad.net/connected)
 	    if [[ "$connectedStatus" == *"("* ]]; then    
 	      #status=$(echo $connectedStatus | cut -d "(" -f 1 | sed 's/ *$//g')
 	      STOP="true"
@@ -30,7 +30,7 @@ case $1 in
 	      #echo "$(echo $connectedStatus | cut -d "." -f 1 | sed 's/ *$//g')." #1> /tmp/.checkip
 	      STOP="false"
 	    fi
-	    ;;
+	;;
 	stop)
 		STOP="true"
 	;;
