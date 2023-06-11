@@ -1,5 +1,5 @@
 #!/bin/bash
-curl -sSk --ipv4 https://am.i.mullvad.net/connected
+curl -sSk --ipv4 --max-time 3 --connect-timeout 3 https://ipv4.am.i.mullvad.net/connected
 
 # This shell script is used to keep a track of which server the VPN is current connected to 
 # in a format that is easily readable. Let's face it,  mullvad-lv1 isn\'t very descriptive.
