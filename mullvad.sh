@@ -1,9 +1,15 @@
 #!/bin/bash
 
+/home/pi/WaitForInternet.sh
+
+# Check if another instance of script is running
+pidof -o %PPID -x "$0" >/dev/null && echo "ERROR: Script $0 already running" && exit 1
+echo $$ > /run/Mullvad.pid
+
 # -e option instructs bash to immediately exit if any command [1] has a non-zero exit status
 # we don't want to continue execution of the script if something is broken. This may potentially
 # complicate IP routing table entries which may require manual intervention to fix thereafter.
-set -e
+#set -e
 
 # Declare global variables here
 # Modify the variables in this section in conformity with the naming convention of your Mullvad
@@ -13,7 +19,8 @@ wireguardConfigurationDirectory="/etc/wireguard/"
 connectedWireguardConfiguration=""
 
 # A method to retrieve the current connected Mullvad interface.
-checkMullvadConnectivity() {
+checkWireguardConnectivity() 
+{
   # Check if Mullvad VPN is already connected.
   #connectedWireguardConfiguration=$(ip addr | grep --word-regexp "$1" | cut -d " " -f 2 | tr -d ":")
   connectedWireguardConfiguration=$(wg| grep mullvad | grep -v wg0 | sed "s/interface:// ")
@@ -21,10 +28,25 @@ checkMullvadConnectivity() {
   return 0
 }
 
+checkMullvadConnectivity()
+{
+  response=$(curl --max-time 3 --connect-timeout 3  --write-out %{http_code} --silent --output /dev/null https://am.i.mullvad.net/connected)
+
+  if [ "$response" = "200" ]; then
+     echo "Connection is healthy"
+     return 0
+  else
+     echo "Connection is not healthy (response code - $response )"
+     if [ "$1" = true ]; then
+         exit 1
+     fi
+  fi
+}
+
 case $1 in
   toggle)
-      connectedStatus=$(curl -sSk https://am.i.mullvad.net/connected)
-      if [[ "$connectedStatus" == *"("* ]]; then    
+      connectedStatus=$(curl -sSk https://ipv4.am.i.mullvad.net/connected)
+      if [[ "$connectedStatus" == *"("* ]]; then
         #status=$(echo $connectedStatus | cut -d "(" -f 1 | sed 's/ *$//g')
         STOP="true"
       else
@@ -36,7 +58,8 @@ case $1 in
     STOP="true"
   ;;
   status)
-    curl -sSk --ipv4 https://am.i.mullvad.net/connected
+    curl -sSk --ipv4 --max-time 3 --connect-timeout 3 https://ipv4.am.i.mullvad.net/connected
+    curl -sSk --ipv4 --max-time 3 --connect-timeout 3 https://ipinfo.io
     exit
   ;;
   #checkIP)
@@ -53,18 +76,18 @@ case $1 in
     # Retrieve the current status of the VPN client. The general output of this is
     # You are connected to Mullvad (server us107-wireguard). Your IP address is 86.106.121.248
     # We strip out the sections we don't require and use the rest.
-    #connectedStatus=$(curl -sSk --ipv4 https://am.i.mullvad.net/connected)
+    #connectedStatus=$(curl -sSk --ipv4 --connect-timeout 5 https://ipv4.am.i.mullvad.net/connected)
     #if [[ "$connectedStatus" == *"("* ]]; then
 
-    #curl --sS https://am.i.mullvad.net/connected
+    #curl --sS https://ipv4.am.i.mullvad.net/connected
     #You are connected to Mullvad (server ca14-wireguard). Your IP address is 89.36.78.216
-    #curl --sS https://am.i.mullvad.net/ip
+    #curl --sS https://ipv4.am.i.mullvad.net/ip
     #89.36.78.216
-    #curl --sS https://am.i.mullvad.net/city
+    #curl --sS https://ipv4.am.i.mullvad.net/city
     #Montreal
-    #curl --sS https://am.i.mullvad.net/country
+    #curl --sS https://ipv4.am.i.mullvad.net/country
     #Canada
-    #curl --sS https://am.i.mullvad.net/json
+    #curl --sS https://ipv4.am.i.mullvad.net/json
     #{
     #  "ip": "89.36.78.216",
     #  "country": "Canada",
@@ -95,10 +118,10 @@ case $1 in
     #   ip=$(echo $connectedStatus | cut -d "." -f 2-5 | sed 's/ *$//g')
 
     #   # This returns a country name.
-    #   country=$(curl -sSk --ipv4 https://am.i.mullvad.net/country | sed 's/ *$//g')
+    #   country=$(curl -sSk --ipv4 https://ipv4.am.i.mullvad.net/country | sed 's/ *$//g')
 
     #   # This returns a city name
-    #   city=$(curl -sSk --ipv4 https://am.i.mullvad.net/city | sed 's/ *$//g')
+    #   city=$(curl -sSk --ipv4 https://ipv4.am.i.mullvad.net/city | sed 's/ *$//g')
 
     #   echo "$status server in $city, $country.$ip" #1> /tmp/.checkip
     # else
@@ -117,7 +140,8 @@ case $1 in
     exit
   ;;
 esac
-checkMullvadConnectivity "$mullvadVpnInterfaceRegex"
+# checkMullvadConnectivity
+checkWireguardConnectivity "$mullvadVpnInterfaceRegex"
 
 # Debug log
 # echo " ip addr command returned $connectedWireguardConfiguration"
@@ -144,7 +168,7 @@ if [ "$STOP" == "true" ];then
   #elif [[ -z "$connectedWireguardConfiguration" ]]; then
     #echo "Not currently connected to any VPN."
   fi
-  curl -sSk --ipv4 https://am.i.mullvad.net/connected
+  curl -sSk --ipv4 --max-time 3 --connect-timeout 3 https://ipv4.am.i.mullvad.net/connected
   exit
 else
   while : ; do
@@ -153,8 +177,10 @@ else
 
     # Satisfies this condition if a connected interface was found.
     if [[ -n "$connectedWireguardConfiguration" ]]; then
-      echo "System is currently connected to $connectedWireguardConfiguration and switching over to $newWireguardConfiguration"
+      echo "System is currently connected to $connectedWireguardConfiguration and will be switching over to $newWireguardConfiguration"
+      echo "Disconnecting from $connectedWireguardConfiguration"
       sudo wg-quick down $connectedWireguardConfiguration # 2> /dev/null
+      echo "Connecting to $newWireguardConfiguration"
       sudo wg-quick up $wireguardConfigurationDirectory$newWireguardConfiguration # 2> /dev/null
 
     # Satisfies this condition if a connected interface was not found.
@@ -163,29 +189,25 @@ else
       sudo wg-quick up $wireguardConfigurationDirectory$newWireguardConfiguration # 2> /dev/null
     fi
     sleep 2
-    IP=$(curl -sSk --ipv4 https://am.i.mullvad.net/connected)
-    DELIMITER=':'
-    if [[ "$IP" == *"$DELIMITER"* ]]; then
+    checkMullvadConnectivity
+    IP=$(curl -sSk --ipv4 --max-time 3 --connect-timeout 3 https://ipv4.am.i.mullvad.net/connected)
+    successDelimiter='.'
+    ipv6Delimiter=':'
+    if [[ "$IP" == *"$ipv6Delimiter"* ]]; then
       echo "$IP"
       echo "Connected to IPV6. Reconnecting."
-      checkMullvadConnectivity "$mullvadVpnInterfaceRegex"
+      checkWireguardConnectivity "$mullvadVpnInterfaceRegex"
 
-      # Debug log
-      # echo " ip addr command returned $connectedWireguardConfiguration"
+    elif [[ "$IP" != *"$successDelimiter"* ]]; then
+      echo "$IP"
+      echo "Failed to connect."
+      checkWireguardConnectivity "$mullvadVpnInterfaceRegex"
 
-      # Extract the wireguard configuration list that is available in /etc/wireguard
-      # newWireguardConfigurationList=$(sudo ls $wireguardConfigurationDirectory | grep --word-regexp "$mullvadVpnInterfaceRegex")
-      #if [[ -n "$connectedWireguardConfiguration" ]]; then
-      # newWireguardConfigurationList=$(sudo ls $wireguardConfigurationDirectory | grep -v "$connectedWireguardConfiguration" | grep --word-regexp "$mullvadVpnInterfaceRegex" | grep conf$)
-
-      #elif [[ -z "$connectedWireguardConfiguration" ]]; then
-      # newWireguardConfigurationList=$(sudo ls $wireguardConfigurationDirectory | grep --word-regexp "$mullvadVpnInterfaceRegex" | grep conf$)
-      #fi
     else
-      curl -sSk --ipv4 https://am.i.mullvad.net/connected
+      curl -sSk --ipv4 --max-time 3 --connect-timeout 3 https://ipv4.am.i.mullvad.net/connected
       exit
     fi
-    [[ "$IP" == *"$DELIMITER"* ]] || break
+    [[ "$IP" != *"$successDelimiter"* ]] || [[ "$IP" == *"$ipv6Delimiter"* ]] || break
   done
 fi
 
