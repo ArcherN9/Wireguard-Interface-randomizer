@@ -1,5 +1,8 @@
 #!/bin/bash
 
+max_timeout=3
+connect_timeout=3
+
 /home/pi/WaitForInternet.sh
 
 # Check if another instance of script is running
@@ -30,7 +33,7 @@ checkWireguardConnectivity()
 
 checkMullvadConnectivity()
 {
-  response=$(curl --max-time 3 --connect-timeout 3  --write-out %{http_code} --silent --output /dev/null https://am.i.mullvad.net/connected)
+  response=$(curl --max-time $max_timeout --connect-timeout $connect_timeout --write-out %{http_code} --silent --output /dev/null https://am.i.mullvad.net/connected)
 
   if [ "$response" = "200" ]; then
      echo "Connection is healthy"
@@ -58,8 +61,8 @@ case $1 in
     STOP="true"
   ;;
   status)
-    curl -sSk --ipv4 --max-time 3 --connect-timeout 3 https://ipv4.am.i.mullvad.net/connected
-    curl -sSk --ipv4 --max-time 3 --connect-timeout 3 https://ipinfo.io
+    curl -sSk --ipv4 --max-time $max_timeout --connect-timeout $connect_timeout https://ipv4.am.i.mullvad.net/connected
+    curl -sSk --ipv4 --max-time $max_timeout --connect-timeout $connect_timeout https://ipinfo.io/
     exit
   ;;
   #checkIP)
@@ -168,7 +171,7 @@ if [ "$STOP" == "true" ];then
   #elif [[ -z "$connectedWireguardConfiguration" ]]; then
     #echo "Not currently connected to any VPN."
   fi
-  curl -sSk --ipv4 --max-time 3 --connect-timeout 3 https://ipv4.am.i.mullvad.net/connected
+  curl -sSk --ipv4 --max-time $max_timeout --connect-timeout $connect_timeout https://ipv4.am.i.mullvad.net/connected
   exit
 else
   while : ; do
@@ -190,7 +193,7 @@ else
     fi
     sleep 2
     checkMullvadConnectivity
-    IP=$(curl -sSk --ipv4 --max-time 3 --connect-timeout 3 https://ipv4.am.i.mullvad.net/connected)
+    IP=$(curl -sSk --ipv4 --max-time $max_timeout --connect-timeout $connect_timeout https://ipv4.am.i.mullvad.net/connected)
     successDelimiter='.'
     ipv6Delimiter=':'
     if [[ "$IP" == *"$ipv6Delimiter"* ]]; then
@@ -204,7 +207,7 @@ else
       checkWireguardConnectivity "$mullvadVpnInterfaceRegex"
 
     else
-      curl -sSk --ipv4 --max-time 3 --connect-timeout 3 https://ipv4.am.i.mullvad.net/connected
+      curl -sSk --ipv4 --max-time $max_timeout --connect-timeout $connect_timeout https://ipv4.am.i.mullvad.net/connected
       exit
     fi
     [[ "$IP" != *"$successDelimiter"* ]] || [[ "$IP" == *"$ipv6Delimiter"* ]] || break
